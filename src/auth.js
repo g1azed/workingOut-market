@@ -21,14 +21,4 @@ passport.use(new DiscordStrategy({
   }
 }));
 
-passport.serializeUser((user, done) => done(null, user.id));
-passport.deserializeUser(async (id, done) => {
-  try {
-    const doc = await db.collection('users').doc(id).get();
-    done(null, doc.exists ? doc.data() : false);
-  } catch (err) {
-    done(err);
-  }
-});
-
 module.exports = passport;

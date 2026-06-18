@@ -2,6 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const { v2: cloudinary } = require('cloudinary');
+const jwt = require('jsonwebtoken');
 const { db } = require('./firebase');
 const passport = require('./auth');
 
@@ -47,17 +48,28 @@ async function deleteFromCloudinary(url) {
 router.get('/auth/discord', passport.authenticate('discord'));
 router.get('/auth/discord/callback',
   (req, res, next) => {
-    passport.authenticate('discord', (err, user) => {
+    passport.authenticate('discord', { session: false }, (err, user) => {
       if (err) { console.error('Discord auth error:', JSON.stringify(err)); return res.redirect('/login'); }
       if (!user) return res.redirect('/login');
-      req.logIn(user, err2 => {
-        if (err2) return res.redirect('/login');
-        res.redirect('/');
+      const token = jwt.sign(
+        { id: user.id, username: user.username, avatar: user.avatar },
+        process.env.SESSION_SECRET || 'dev-secret',
+        { expiresIn: '7d' }
+      );
+      res.cookie('auth_token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000,
       });
+      res.redirect('/');
     })(req, res, next);
   }
 );
-router.get('/auth/logout', (req, res) => req.logout(() => res.redirect('/')));
+router.get('/auth/logout', (req, res) => {
+  res.clearCookie('auth_token');
+  res.redirect('/');
+});
 
 // Pages
 router.get('/login', (req, res) => {
