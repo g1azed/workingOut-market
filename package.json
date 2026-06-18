@@ -7,16 +7,19 @@
     "start": "node index.js",
     "dev": "node --watch index.js"
   },
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "better-sqlite3": "^12.11.1",
-    "better-sqlite3-session-store": "^0.1.0",
+    "cloudinary": "^2.10.0",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "express-session": "^1.19.0",
+    "firebase-admin": "^14.0.0",
     "multer": "^2.2.0",
     "passport": "^0.7.0",
     "passport-discord": "^0.1.4"
