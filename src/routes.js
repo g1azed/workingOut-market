@@ -90,12 +90,12 @@ router.get('/api/items', async (req, res) => {
     const { category, search, page = 1 } = req.query;
     const limit = 20;
 
-    let query = db.collection('items').orderBy('created_at', 'desc');
-    if (category && category !== 'all') query = query.where('category', '==', category);
-
-    const snapshot = await query.get();
+    const snapshot = await db.collection('items').orderBy('created_at', 'desc').get();
     let items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
+    if (category && category !== 'all') {
+      items = items.filter(item => item.category === category);
+    }
     if (search) {
       const q = search.toLowerCase();
       items = items.filter(item =>
