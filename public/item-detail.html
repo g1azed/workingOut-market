@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>상품 상세 - WorkingOut Market</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <nav>
+    <div class="nav-inner">
+      <a href="/" class="nav-logo">🏋️ WorkingOut Market</a>
+      <div class="nav-spacer"></div>
+      <a href="/" class="nav-btn nav-btn-outline">← 목록으로</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="detail-wrap" id="detail"></div>
+  </div>
+
+  <script>
+    const id = location.pathname.split('/').pop();
+
+    function formatPrice(p) {
+      return Number(p).toLocaleString('ko-KR') + '원';
+    }
+
+    function statusLabel(s) {
+      return { selling: '판매중', reserved: '예약중', sold: '판매완료' }[s] || s;
+    }
+
+    function timeAgo(dateStr) {
+      const diff = Date.now() - new Date(dateStr).getTime();
+      const m = Math.floor(diff / 60000);
+      if (m < 1) return '방금 전';
+      if (m < 60) return m + '분 전';
+      const h = Math.floor(m / 60);
+      if (h < 24) return h + '시간 전';
+      return Math.floor(h / 24) + '일 전';
+    }
+
+    async function load() {
+      const [item, me] = await Promise.all([
+        fetch('/api/items/' + id).then(r => r.json()),
+        fetch('/api/me').then(r => r.json())
+      ]);
+
+      if (item.error) {
+        document.getElementById('detail').innerHTML = '<div class="empty"><div class="empty-icon">😥</div><p>상품을 찾을 수 없습니다.</p></div>';
+        return;
+      }
+
+      const isOwner = me && me.id === item.seller_id;
+      const mainImg = item.images.length
+        ? `<img id="main-img" src="${item.images[0]}" alt="${item.title}" />`
+        : `<span style="font-size:80px">📦</span>`;
+
+      const thumbs = item.images.length > 1 ? `
+        <div class="img-thumbs">
+          ${item.images.map((src, i) => `<img class="img-thumb${i===0?' active':''}" src="${src}" onclick="switchImg(this,'${src}')" />`).join('')}
+        </div>` : '';
+
+      const ownerActions = isOwner ? `
+        <div class="owner-actions">
+          <select id="status-select" onchange="updateStatus(this.value)">
+            <option value="selling"${item.status==='selling'?' selected':''}>판매중</option>
+            <option value="reserved"${item.status==='reserved'?' selected':''}>예약중</option>
+            <option value="sold"${item.status==='sold'?' selected':''}>판매완료</option>
+          </select>
+          <button class="btn-danger" onclick="deleteItem()">삭제하기</button>
+        </div>` : '';
+
+      const avatarUrl = item.avatar
+        ? `https://cdn.discordapp.com/avatars/${item.seller_id}/${item.avatar}.png`
+        : null;
+
+      document.getElementById('detail').innerHTML = `
+        <div class="detail-imgs">${mainImg}</div>
+        ${thumbs}
+        <div class="detail-body">
+          <div class="detail-info">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+              <span class="status-badge status-${item.status}">${statusLabel(item.status)}</span>
+              <span style="font-size:13px;color:var(--gray-400)">${item.category}</span>
+            </div>
+            <h1>${item.title}</h1>
+            <div class="detail-price">${formatPrice(item.price)}</div>
+            <div class="detail-desc">${item.description}</div>
+            <div class="detail-meta">
+              <span>📅 ${timeAgo(item.created_at)}</span>
+            </div>
+          </div>
+          <div>
+            <div class="seller-card">
+              <h3>판매자 정보</h3>
+              <div class="seller-info">
+                ${avatarUrl
+                  ? `<img class="seller-avatar" src="${avatarUrl}" alt="${item.username}" />`
+                  : `<div class="seller-avatar"></div>`}
+                <div class="seller-name">${item.username}</div>
+              </div>
+              ${ownerActions}
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.title = item.title + ' - WorkingOut Market';
+    }
+
+    function switchImg(el, src) {
+      document.getElementById('main-img').src = src;
+      document.querySelectorAll('.img-thumb').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+    }
+
+    async function updateStatus(status) {
+      const res = await fetch('/api/items/' + id + '/status', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      });
+      if (!res.ok) alert('상태 변경에 실패했습니다.');
+    }
+
+    async function deleteItem() {
+      if (!confirm('정말 삭제하시겠습니까?')) return;
+      const res = await fetch('/api/items/' + id, { method: 'DELETE' });
+      if (res.ok) window.location.href = '/';
+      else alert('삭제에 실패했습니다.');
+    }
+
+    load();
+  </script>
+</body>
+</html>

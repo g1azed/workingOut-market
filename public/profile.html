@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>내 상품 - WorkingOut Market</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <nav>
+    <div class="nav-inner">
+      <a href="/" class="nav-logo">🏋️ WorkingOut Market</a>
+      <div class="nav-spacer"></div>
+      <a href="/items/new" class="nav-btn nav-btn-primary">+ 판매하기</a>
+      <a href="/auth/logout" class="nav-btn nav-btn-outline">로그아웃</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div id="profile-header"></div>
+    <div class="section-title">내 판매 목록</div>
+    <div id="my-items" class="items-grid"></div>
+  </div>
+
+  <script>
+    function formatPrice(p) {
+      return Number(p).toLocaleString('ko-KR') + '원';
+    }
+    function statusLabel(s) {
+      return { selling: '판매중', reserved: '예약중', sold: '판매완료' }[s] || s;
+    }
+
+    async function load() {
+      const [me, items] = await Promise.all([
+        fetch('/api/me').then(r => r.json()),
+        fetch('/api/profile/items').then(r => r.json())
+      ]);
+
+      if (!me) { window.location.href = '/login'; return; }
+
+      const avatarUrl = me.avatar
+        ? `https://cdn.discordapp.com/avatars/${me.id}/${me.avatar}.png`
+        : null;
+
+      document.getElementById('profile-header').innerHTML = `
+        <div class="profile-header">
+          ${avatarUrl
+            ? `<img class="profile-avatar" src="${avatarUrl}" alt="${me.username}" />`
+            : `<div class="profile-avatar" style="background:var(--gray-200);border-radius:50%"></div>`}
+          <div>
+            <div class="profile-name">${me.username}</div>
+            <div class="profile-sub">판매 상품 ${items.length}개</div>
+          </div>
+        </div>`;
+
+      const grid = document.getElementById('my-items');
+      if (!items.length) {
+        grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="empty-icon">📦</div><p>등록한 상품이 없습니다.</p></div>`;
+        return;
+      }
+
+      grid.innerHTML = items.map(item => `
+        <a href="/items/${item.id}" class="item-card">
+          <div class="item-img">
+            ${item.images.length ? `<img src="${item.images[0]}" alt="${item.title}" loading="lazy" />` : '📦'}
+          </div>
+          <div class="item-info">
+            <div class="item-title">${item.title}</div>
+            <div class="item-price">${formatPrice(item.price)}</div>
+            <div class="item-meta">
+              <span class="status-badge status-${item.status}">${statusLabel(item.status)}</span>
+              <span>${item.category}</span>
+            </div>
+          </div>
+        </a>
+      `).join('');
+    }
+
+    load();
+  </script>
+</body>
+</html>

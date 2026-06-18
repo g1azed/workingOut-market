@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WorkingOut Market</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <nav>
+    <div class="nav-inner">
+      <a href="/" class="nav-logo">🏋️ WorkingOut Market</a>
+      <div class="nav-spacer"></div>
+      <div id="nav-auth"></div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="hero">
+      <h1>퇴근 중고 거래</h1>
+      <p>퇴근 중고거래</p>
+    </div>
+
+    <div class="filters">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="search" placeholder="상품명을 검색하세요..." />
+      </div>
+      <button class="cat-btn active" data-cat="all">전체</button>
+      <button class="cat-btn" data-cat="인게임재화">인게임재화</button>
+      <button class="cat-btn" data-cat="굿즈">굿즈</button>
+      <button class="cat-btn" data-cat="PC용품">PC용품</button>
+      <button class="cat-btn" data-cat="퇴근">퇴근</button>
+      <button class="cat-btn" data-cat="퇴근">퇴근</button>
+      <button class="cat-btn" data-cat="기타">기타</button>
+    </div>
+
+    <div id="items-grid" class="items-grid"></div>
+    <div id="pagination" class="pagination"></div>
+  </div>
+
+  <script>
+    const CATEGORIES = ['all','인게임재화','굿즈','PC용품','퇴근','퇴근','기타'];
+    let currentPage = 1, currentCat = 'all', searchTimer;
+
+    async function loadUser() {
+      const user = await fetch('/api/me').then(r => r.json());
+      const el = document.getElementById('nav-auth');
+      if (user) {
+        el.innerHTML = `
+          <div class="nav-user">
+            ${user.avatar
+              ? `<img class="nav-avatar" src="https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png" />`
+              : `<div class="nav-avatar"></div>`}
+            <span>${user.username}</span>
+            <a href="/profile" class="nav-btn nav-btn-outline">내 상품</a>
+            <a href="/items/new" class="nav-btn nav-btn-primary">+ 판매하기</a>
+            <a href="/auth/logout" class="nav-btn nav-btn-outline">로그아웃</a>
+          </div>`;
+      } else {
+        el.innerHTML = `<a href="/login" class="nav-btn nav-btn-primary">로그인</a>`;
+      }
+    }
+
+    function formatPrice(p) {
+      return Number(p).toLocaleString('ko-KR') + '원';
+    }
+
+    function statusLabel(s) {
+      return { selling: '판매중', reserved: '예약중', sold: '판매완료' }[s] || s;
+    }
+
+    async function loadItems() {
+      const search = document.getElementById('search').value;
+      const params = new URLSearchParams({ page: currentPage });
+      if (currentCat !== 'all') params.set('category', currentCat);
+      if (search) params.set('search', search);
+
+      const data = await fetch('/api/items?' + params).then(r => r.json());
+      const grid = document.getElementById('items-grid');
+
+      if (!data.items.length) {
+        grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="empty-icon">📦</div><p>상품이 없습니다.</p></div>`;
+        document.getElementById('pagination').innerHTML = '';
+        return;
+      }
+
+      grid.innerHTML = data.items.map(item => `
+        <a href="/items/${item.id}" class="item-card">
+          <div class="item-img">
+            ${item.images.length
+              ? `<img src="${item.images[0]}" alt="${item.title}" loading="lazy" />`
+              : '📦'}
+          </div>
+          <div class="item-info">
+            <div class="item-title">${item.title}</div>
+            <div class="item-price">${formatPrice(item.price)}</div>
+            <div class="item-meta">
+              <span class="status-badge status-${item.status}">${statusLabel(item.status)}</span>
+              <span>${item.category}</span>
+            </div>
+          </div>
+        </a>
+      `).join('');
+
+      const pg = document.getElementById('pagination');
+      if (data.pages <= 1) { pg.innerHTML = ''; return; }
+      let html = '';
+      for (let i = 1; i <= data.pages; i++) {
+        html += `<button class="page-btn${i === data.page ? ' active' : ''}" onclick="goPage(${i})">${i}</button>`;
+      }
+      pg.innerHTML = html;
+    }
+
+    function goPage(p) { currentPage = p; loadItems(); window.scrollTo(0, 0); }
+
+    document.querySelectorAll('.cat-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentCat = btn.dataset.cat;
+        currentPage = 1;
+        loadItems();
+      });
+    });
+
+    document.getElementById('search').addEventListener('input', () => {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => { currentPage = 1; loadItems(); }, 400);
+    });
+
+    loadUser();
+    loadItems();
+  </script>
+</body>
+</html>

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>상품 등록 - WorkingOut Market</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <nav>
+    <div class="nav-inner">
+      <a href="/" class="nav-logo">🏋️ WorkingOut Market</a>
+      <div class="nav-spacer"></div>
+      <a href="/" class="nav-btn nav-btn-outline">← 목록으로</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="form-card">
+      <h2>상품 등록</h2>
+      <form id="item-form">
+        <div class="form-group">
+          <label>상품 사진 (최대 5장)</label>
+          <div class="upload-area" id="upload-area">
+            <input type="file" id="images" name="images" accept="image/*" multiple />
+            <div id="upload-placeholder">
+              <div style="font-size:32px;margin-bottom:8px">📷</div>
+              <div style="font-size:14px;color:var(--gray-400)">클릭하여 사진 추가</div>
+            </div>
+            <div class="upload-preview" id="preview"></div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="title">상품명 *</label>
+          <input type="text" id="title" name="title" placeholder="상품명을 입력하세요" required />
+        </div>
+        <div class="form-group">
+          <label for="category">카테고리 *</label>
+          <select id="category" name="category" required>
+            <option value="">카테고리 선택</option>
+            <option value="인게임재화">인게임재화</option>
+            <option value="굿즈">굿즈</option>
+            <option value="PC용품">PC용품</option>
+            <option value="퇴근">퇴근</option>
+            <option value="퇴근">퇴근</option>
+            <option value="기타">기타</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="price">가격 *</label>
+          <input type="number" id="price" name="price" placeholder="0" min="0" required />
+        </div>
+        <div class="form-group">
+          <label for="description">상품 설명 *</label>
+          <textarea id="description" name="description" placeholder="상품 상태, 구매 시기, 판매 이유 등을 자세히 적어주세요." required></textarea>
+        </div>
+        <button type="submit" class="btn-submit" id="submit-btn">등록하기</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const uploadArea = document.getElementById('upload-area');
+    const input = document.getElementById('images');
+    const preview = document.getElementById('preview');
+
+    uploadArea.addEventListener('click', () => input.click());
+    input.addEventListener('change', () => {
+      preview.innerHTML = '';
+      Array.from(input.files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = e => {
+          const img = document.createElement('img');
+          img.src = e.target.result;
+          preview.appendChild(img);
+        };
+        reader.readAsDataURL(file);
+      });
+    });
+
+    document.getElementById('item-form').addEventListener('submit', async e => {
+      e.preventDefault();
+      const btn = document.getElementById('submit-btn');
+      btn.disabled = true;
+      btn.textContent = '등록 중...';
+
+      const fd = new FormData();
+      fd.append('title', document.getElementById('title').value);
+      fd.append('category', document.getElementById('category').value);
+      fd.append('price', document.getElementById('price').value);
+      fd.append('description', document.getElementById('description').value);
+      Array.from(input.files).forEach(f => fd.append('images', f));
+
+      const res = await fetch('/api/items', { method: 'POST', body: fd });
+      const data = await res.json();
+
+      if (res.ok) {
+        window.location.href = '/items/' + data.id;
+      } else {
+        alert(data.error || '등록에 실패했습니다.');
+        btn.disabled = false;
+        btn.textContent = '등록하기';
+      }
+    });
+  </script>
+</body>
+</html>
