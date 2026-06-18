@@ -116,6 +116,13 @@ nav { background: var(--white); border-bottom: 1px solid var(--gray-200); positi
 .btn-discord:hover { background: #4752C4; } 
 .discord-icon { font-size: 24px; } 
 
+/* trade-rules */
+.trade_rules{
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
 @media (max-width: 640px){
  .detail-body { grid-template-columns: 1fr; } 
  .hero { padding: 24px; } 
