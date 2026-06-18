@@ -92,11 +92,12 @@ router.get('/api/items/:id', (req, res) => {
 });
 
 router.post('/api/items', requireAuth, upload.array('images', 5), (req, res) => {
-  const { title, description, price, category } = req.body;
+  const { title, description, price, category, trade_type, trade_location } = req.body;
   if (!title || !description || !price || !category) return res.status(400).json({ error: '모든 필드를 입력해주세요.' });
+  if (!['direct', 'delivery'].includes(trade_type)) return res.status(400).json({ error: '거래 방식을 선택해주세요.' });
   const images = req.files ? req.files.map(f => '/uploads/' + f.filename) : [];
-  const result = db.prepare('INSERT INTO items (user_id, title, description, price, category, images) VALUES (?, ?, ?, ?, ?, ?)')
-    .run(req.user.id, title, description, Number(price), category, JSON.stringify(images));
+  const result = db.prepare('INSERT INTO items (user_id, title, description, price, category, images, trade_type, trade_location) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+    .run(req.user.id, title, description, Number(price), category, JSON.stringify(images), trade_type, trade_type === 'direct' ? (trade_location || '') : '');
   res.json({ id: result.lastInsertRowid });
 });
 
@@ -105,7 +106,7 @@ router.put('/api/items/:id', requireAuth, upload.array('images', 5), (req, res) 
   if (!item) return res.status(404).json({ error: '상품을 찾을 수 없습니다.' });
   if (item.user_id !== req.user.id) return res.status(403).json({ error: '권한이 없습니다.' });
 
-  const { title, description, price, category } = req.body;
+  const { title, description, price, category, trade_type, trade_location } = req.body;
   if (!title || !description || !price || !category) return res.status(400).json({ error: '모든 필드를 입력해주세요.' });
 
   let images = JSON.parse(item.images || '[]');
@@ -117,8 +118,8 @@ router.put('/api/items/:id', requireAuth, upload.array('images', 5), (req, res) 
     images = req.files.map(f => '/uploads/' + f.filename);
   }
 
-  db.prepare('UPDATE items SET title=?, description=?, price=?, category=?, images=? WHERE id=?')
-    .run(title, description, Number(price), category, JSON.stringify(images), req.params.id);
+  db.prepare('UPDATE items SET title=?, description=?, price=?, category=?, images=?, trade_type=?, trade_location=? WHERE id=?')
+    .run(title, description, Number(price), category, JSON.stringify(images), trade_type, trade_type === 'direct' ? (trade_location || '') : '', req.params.id);
   res.json({ success: true });
 });
 

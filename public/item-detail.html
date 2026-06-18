@@ -31,13 +31,13 @@
     }
 
     function timeAgo(dateStr) {
-      const diff = Date.now() - new Date(dateStr).getTime();
-      const m = Math.floor(diff / 60000);
-      if (m < 1) return '방금 전';
-      if (m < 60) return m + '분 전';
-      const h = Math.floor(m / 60);
-      if (h < 24) return h + '시간 전';
-      return Math.floor(h / 24) + '일 전';
+      const d = new Date(dateStr);
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      const hh = d.getHours();
+      const min = String(d.getMinutes()).padStart(2, '0');
+      return `${yyyy}.${mm}.${dd} ${hh}시 ${min}분`;
     }
 
     async function load() {
@@ -91,6 +91,12 @@
             <div class="detail-meta">
               <span>📅 ${timeAgo(item.created_at)}</span>
             </div>
+            <div style="margin-top:16px;padding:16px;background:var(--gray-50);border-radius:8px;font-size:14px">
+              <div style="font-weight:600;margin-bottom:6px">거래 방식</div>
+              ${item.trade_type === 'delivery'
+                ? `<span>📦 택배거래 · 개인메세지로 문의하세요</span>`
+                : `<span>🤝 직거래 · ${item.trade_location ? item.trade_location : '장소 미정'}</span>`}
+            </div>`
           </div>
           <div>
             <div class="seller-card">

@@ -49,6 +49,18 @@
           <label for="description">상품 설명 *</label>
           <textarea id="description" name="description" placeholder="상품 상태, 구매 시기, 판매 이유 등을 자세히 적어주세요." required></textarea>
         </div>
+        <div class="form-group">
+          <label>거래 방식 *</label>
+          <div style="display:flex;gap:10px;margin-bottom:10px">
+            <label style="display:flex;align-items:center;gap:6px;font-weight:400;cursor:pointer">
+              <input type="radio" name="trade_type" value="direct" checked onchange="onTradeTypeChange(this.value)" /> 직거래
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;font-weight:400;cursor:pointer">
+              <input type="radio" name="trade_type" value="delivery" onchange="onTradeTypeChange(this.value)" /> 택배거래
+            </label>
+          </div>
+          <input type="text" id="trade_location" name="trade_location" placeholder="거래 장소를 입력하세요 (예: 강남역 2번 출구)" />
+        </div>
         <button type="submit" class="btn-submit" id="submit-btn">등록하기</button>
       </form>
     </div>
@@ -66,6 +78,11 @@
     const uploadArea = document.getElementById('upload-area');
     const input = document.getElementById('images');
     const preview = document.getElementById('preview');
+
+    function onTradeTypeChange(val) {
+      document.getElementById('trade_location').style.display = val === 'direct' ? 'block' : 'none';
+    }
+    onTradeTypeChange('direct');
 
     uploadArea.addEventListener('click', () => input.click());
     input.addEventListener('change', () => {
@@ -92,6 +109,9 @@
       fd.append('category', document.getElementById('category').value);
       fd.append('price', document.getElementById('price').value);
       fd.append('description', document.getElementById('description').value);
+      const tradeType = document.querySelector('input[name="trade_type"]:checked').value;
+      fd.append('trade_type', tradeType);
+      fd.append('trade_location', tradeType === 'direct' ? document.getElementById('trade_location').value : '');
       Array.from(input.files).forEach(f => fd.append('images', f));
 
       const res = await fetch('/api/items', { method: 'POST', body: fd });

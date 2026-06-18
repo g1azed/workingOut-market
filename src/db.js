@@ -22,9 +22,15 @@ db.exec(`
     category TEXT NOT NULL,
     images TEXT DEFAULT '[]',
     status TEXT DEFAULT 'selling',
+    trade_type TEXT DEFAULT 'direct',
+    trade_location TEXT DEFAULT '',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id)
   );
 `);
+
+// 기존 DB에 컬럼이 없을 경우 추가
+try { db.exec(`ALTER TABLE items ADD COLUMN trade_type TEXT DEFAULT 'direct'`); } catch {}
+try { db.exec(`ALTER TABLE items ADD COLUMN trade_location TEXT DEFAULT ''`); } catch {}
 
 module.exports = db;
