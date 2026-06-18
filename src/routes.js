@@ -54,6 +54,7 @@ router.get('/login', (req, res) => {
 
 router.get('/', (req, res) => res.sendFile(path.join(__dirname, '../public/index.html')));
 router.get('/items/new', requireAuth, (req, res) => res.sendFile(path.join(__dirname, '../public/new-item.html')));
+router.get('/items/:id/edit', requireAuth, (req, res) => res.sendFile(path.join(__dirname, '../public/edit-item.html')));
 router.get('/items/:id', (req, res) => res.sendFile(path.join(__dirname, '../public/item-detail.html')));
 router.get('/profile', requireAuth, (req, res) => res.sendFile(path.join(__dirname, '../public/profile.html')));
 
@@ -97,6 +98,28 @@ router.post('/api/items', requireAuth, upload.array('images', 5), (req, res) => 
   const result = db.prepare('INSERT INTO items (user_id, title, description, price, category, images) VALUES (?, ?, ?, ?, ?, ?)')
     .run(req.user.id, title, description, Number(price), category, JSON.stringify(images));
   res.json({ id: result.lastInsertRowid });
+});
+
+router.put('/api/items/:id', requireAuth, upload.array('images', 5), (req, res) => {
+  const item = db.prepare('SELECT * FROM items WHERE id = ?').get(req.params.id);
+  if (!item) return res.status(404).json({ error: '상품을 찾을 수 없습니다.' });
+  if (item.user_id !== req.user.id) return res.status(403).json({ error: '권한이 없습니다.' });
+
+  const { title, description, price, category } = req.body;
+  if (!title || !description || !price || !category) return res.status(400).json({ error: '모든 필드를 입력해주세요.' });
+
+  let images = JSON.parse(item.images || '[]');
+  if (req.files && req.files.length > 0) {
+    images.forEach(img => {
+      const filePath = path.join(uploadDir, path.basename(img));
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    });
+    images = req.files.map(f => '/uploads/' + f.filename);
+  }
+
+  db.prepare('UPDATE items SET title=?, description=?, price=?, category=?, images=? WHERE id=?')
+    .run(title, description, Number(price), category, JSON.stringify(images), req.params.id);
+  res.json({ success: true });
 });
 
 router.patch('/api/items/:id/status', requireAuth, (req, res) => {
