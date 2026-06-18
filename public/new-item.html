@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>상품 등록 - WorkingOut Market</title>
   <link rel="stylesheet" href="/style.css">
+  <script src="/categories.js"></script>
 </head>
 <body>
   <nav>
@@ -38,12 +39,6 @@
           <label for="category">카테고리 *</label>
           <select id="category" name="category" required>
             <option value="">카테고리 선택</option>
-            <option value="인게임재화">인게임재화</option>
-            <option value="굿즈">굿즈</option>
-            <option value="PC용품">PC용품</option>
-            <option value="퇴근">퇴근</option>
-            <option value="퇴근">퇴근</option>
-            <option value="기타">기타</option>
           </select>
         </div>
         <div class="form-group">
@@ -60,6 +55,14 @@
   </div>
 
   <script>
+    const select = document.getElementById('category');
+    CATEGORIES.forEach(cat => {
+      const opt = document.createElement('option');
+      opt.value = cat;
+      opt.textContent = cat;
+      select.appendChild(opt);
+    });
+
     const uploadArea = document.getElementById('upload-area');
     const input = document.getElementById('images');
     const preview = document.getElementById('preview');

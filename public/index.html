@@ -5,11 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>WorkingOut Market</title>
   <link rel="stylesheet" href="/style.css">
+  <script src="/categories.js"></script>
 </head>
 <body>
   <nav>
     <div class="nav-inner">
-      <a href="/" class="nav-logo">🏋️ WorkingOut Market</a>
+      <a href="/" class="nav-logo">👾 WorkingOut Market</a>
       <div class="nav-spacer"></div>
       <div id="nav-auth"></div>
     </div>
@@ -18,7 +19,7 @@
   <div class="container">
     <div class="hero">
       <h1>퇴근 중고 거래</h1>
-      <p>퇴근 중고거래</p>
+      <p>퇴근 중고거래 규칙</p>
     </div>
 
     <div class="filters">
@@ -26,13 +27,7 @@
         <span class="search-icon">🔍</span>
         <input type="text" id="search" placeholder="상품명을 검색하세요..." />
       </div>
-      <button class="cat-btn active" data-cat="all">전체</button>
-      <button class="cat-btn" data-cat="인게임재화">인게임재화</button>
-      <button class="cat-btn" data-cat="굿즈">굿즈</button>
-      <button class="cat-btn" data-cat="PC용품">PC용품</button>
-      <button class="cat-btn" data-cat="퇴근">퇴근</button>
-      <button class="cat-btn" data-cat="퇴근">퇴근</button>
-      <button class="cat-btn" data-cat="기타">퇴근</button>
+      <div class="category_btn" id="cat-buttons"></div>
     </div>
 
     <div id="items-grid" class="items-grid"></div>
@@ -40,8 +35,23 @@
   </div>
 
   <script>
-    const CATEGORIES = ['all','인게임재화','굿즈','PC용품','퇴근','퇴근','기타'];
+    const ALL_CATEGORIES = ['all', ...CATEGORIES];
     let currentPage = 1, currentCat = 'all', searchTimer;
+
+    const catContainer = document.getElementById('cat-buttons');
+    catContainer.innerHTML = ALL_CATEGORIES.map(cat =>
+      `<button class="cat-btn${cat === 'all' ? ' active' : ''}" data-cat="${cat}">${cat === 'all' ? '전체' : cat}</button>`
+    ).join('');
+
+    catContainer.querySelectorAll('.cat-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        catContainer.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentCat = btn.dataset.cat;
+        currentPage = 1;
+        loadItems();
+      });
+    });
 
     async function loadUser() {
       const user = await fetch('/api/me').then(r => r.json());
@@ -114,15 +124,6 @@
 
     function goPage(p) { currentPage = p; loadItems(); window.scrollTo(0, 0); }
 
-    document.querySelectorAll('.cat-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        currentCat = btn.dataset.cat;
-        currentPage = 1;
-        loadItems();
-      });
-    });
 
     document.getElementById('search').addEventListener('input', () => {
       clearTimeout(searchTimer);
