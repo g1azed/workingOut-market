@@ -31,8 +31,16 @@ function requireAuth(req, res, next) {
 // Auth
 router.get('/auth/discord', passport.authenticate('discord'));
 router.get('/auth/discord/callback',
-  passport.authenticate('discord', { failureRedirect: '/login' }),
-  (req, res) => res.redirect('/')
+  (req, res, next) => {
+    passport.authenticate('discord', (err, user) => {
+      if (err) { console.error('Discord auth error:', JSON.stringify(err)); return res.redirect('/login'); }
+      if (!user) { console.error('Discord auth: no user'); return res.redirect('/login'); }
+      req.logIn(user, err2 => {
+        if (err2) { console.error('Login error:', err2); return res.redirect('/login'); }
+        res.redirect('/');
+      });
+    })(req, res, next);
+  }
 );
 router.get('/auth/logout', (req, res) => {
   req.logout(() => res.redirect('/'));

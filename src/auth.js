@@ -8,6 +8,7 @@ passport.use(new DiscordStrategy({
   callbackURL: process.env.DISCORD_CALLBACK_URL,
   scope: ['identify']
 }, (accessToken, refreshToken, profile, done) => {
+  console.log('Discord OAuth callback - profile:', profile?.id, profile?.username);
   const existing = db.prepare('SELECT * FROM users WHERE id = ?').get(profile.id);
   if (!existing) {
     db.prepare('INSERT INTO users (id, username, discriminator, avatar) VALUES (?, ?, ?, ?)')
