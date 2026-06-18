@@ -209,9 +209,11 @@ router.get('/api/profile/items', requireAuth, async (req, res) => {
   try {
     const snapshot = await db.collection('items')
       .where('user_id', '==', req.user.id)
-      .orderBy('created_at', 'desc')
       .get();
-    res.json(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    const items = snapshot.docs
+      .map(doc => ({ id: doc.id, ...doc.data() }))
+      .sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
+    res.json(items);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
