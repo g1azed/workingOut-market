@@ -1,6 +1,5 @@
 const express = require('express');
 const multer = require('multer');
-const path = require('path');
 const { v2: cloudinary } = require('cloudinary');
 const jwt = require('jsonwebtoken');
 const { db } = require('./firebase');
@@ -24,7 +23,7 @@ const upload = multer({
 
 function requireAuth(req, res, next) {
   if (req.isAuthenticated()) return next();
-  res.redirect('/login');
+  res.status(401).json({ error: '로그인이 필요합니다.' });
 }
 
 async function uploadToCloudinary(file) {
@@ -71,16 +70,7 @@ router.get('/auth/logout', (req, res) => {
   res.redirect('/');
 });
 
-// Pages
-router.get('/login', (req, res) => {
-  if (req.isAuthenticated()) return res.redirect('/');
-  res.sendFile(path.join(__dirname, '../public/login.html'));
-});
-router.get('/', (req, res) => res.sendFile(path.join(__dirname, '../public/index.html')));
-router.get('/items/new', requireAuth, (req, res) => res.sendFile(path.join(__dirname, '../public/new-item.html')));
-router.get('/items/:id/edit', requireAuth, (req, res) => res.sendFile(path.join(__dirname, '../public/edit-item.html')));
-router.get('/items/:id', (req, res) => res.sendFile(path.join(__dirname, '../public/item-detail.html')));
-router.get('/profile', requireAuth, (req, res) => res.sendFile(path.join(__dirname, '../public/profile.html')));
+// Pages are served by the React SPA (see src/app.js fallback).
 
 // API
 router.get('/api/me', (req, res) => res.json(req.isAuthenticated() ? req.user : null));
